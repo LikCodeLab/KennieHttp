@@ -1,4 +1,4 @@
-package com.kennie.library.example.ui.dashboard
+package com.kennie.example.http.ui.dashboard
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
