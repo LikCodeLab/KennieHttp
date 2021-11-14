@@ -1,0 +1,84 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion '25.0.0'
+    defaultConfig {
+        applicationId "com.zhouyou.http.demo"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0.4"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        /*jackOptions {
+            enabled true
+        }*/
+    }
+    signingConfigs {
+        debug {
+
+        }
+        release {
+            keyAlias 'zy' //修改成自己的签名
+            keyPassword 'zy15102951169'//修改成自己的签名
+            storeFile file('D:/zhouyou.jks')//修改成自己的签名
+            storePassword 'zy15102951169'//修改成自己的签名
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true//是否混淆（注：如果混淆文件未配置使用false）
+            zipAlignEnabled true //是否支持Zip Align
+            shrinkResources true //是否清理无用资源
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+            zipAlignEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+    /*dexOptions {
+        jumboMode = true
+        incremental true
+        javaMaxHeapSize "2g"
+    }*/
+
+    /* compileOptions {
+         targetCompatibility 1.8
+         sourceCompatibility 1.8
+     }*/
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            if (output.outputFile != null && output.outputFile.name.endsWith('.apk')) {
+                def name = "${rootDir}/apk/rxeasyhttp-demo.apk"
+                output.outputFile = file(name)
+            }
+        }
+    }
+}
+
+/*repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}*/
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile project(':rxeasyhttp')
+    //compile 'com.zhouyou:rxeasyhttp:2.0.4'
+    //compile(name:'rxeasyhttp-release', ext:'aar')
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar'
+    compile 'com.jakewharton.rxbinding2:rxbinding:2.0.0'
+    testCompile 'junit:junit:4.12'
+}
