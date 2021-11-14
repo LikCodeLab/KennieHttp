@@ -5,6 +5,8 @@ import android.net.ParseException;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
+import com.kennie.library.http.KennieHttp;
+import com.kennie.library.http.R;
 import com.kennie.library.http.model.ApiResult;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -73,20 +75,6 @@ public class ApiException extends Exception {
         if (e instanceof HttpException) {
             HttpException httpException = (HttpException) e;
             ex = new ApiException(httpException, httpException.code());
-            /*switch (httpException.code()) {
-                case BADREQUEST:
-                case UNAUTHORIZED:
-                case FORBIDDEN:
-                case NOT_FOUND:
-                case REQUEST_TIMEOUT:
-                case GATEWAY_TIMEOUT:
-                case INTERNAL_SERVER_ERROR:
-                case BAD_GATEWAY:
-                case SERVICE_UNAVAILABLE:
-                default:
-                    ex.message = "网络错误,Code:"+httpException.code()+" ,err:"+httpException.getMessage();
-                    break;
-            }*/
             ex.message = httpException.getMessage();
             return ex;
         } else if (e instanceof ServerException) {
@@ -101,39 +89,39 @@ public class ApiException extends Exception {
                 || e instanceof NotSerializableException
                 || e instanceof ParseException) {
             ex = new ApiException(e, ERROR.PARSE_ERROR);
-            ex.message = "解析错误";
+            ex.message = KennieHttp.getContext().getString(R.string.parsing_error);
             return ex;
         } else if (e instanceof ClassCastException) {
             ex = new ApiException(e, ERROR.CAST_ERROR);
-            ex.message = "类型转换错误";
+            ex.message = KennieHttp.getContext().getString(R.string.type_conversion_error);
             return ex;
         } else if (e instanceof ConnectException) {
-            ex = new ApiException(e, ERROR.NETWORD_ERROR);
-            ex.message = "连接失败";
+            ex = new ApiException(e, ERROR.NETWORK_ERROR);
+            ex.message = KennieHttp.getContext().getString(R.string.connection_failed);
             return ex;
         } else if (e instanceof javax.net.ssl.SSLHandshakeException) {
             ex = new ApiException(e, ERROR.SSL_ERROR);
-            ex.message = "证书验证失败";
+            ex.message = KennieHttp.getContext().getString(R.string.certificate_verification_failed);
             return ex;
         } else if (e instanceof ConnectTimeoutException) {
             ex = new ApiException(e, ERROR.TIMEOUT_ERROR);
-            ex.message = "连接超时";
+            ex.message = KennieHttp.getContext().getString(R.string.time_out);
             return ex;
         } else if (e instanceof java.net.SocketTimeoutException) {
             ex = new ApiException(e, ERROR.TIMEOUT_ERROR);
-            ex.message = "连接超时";
+            ex.message = KennieHttp.getContext().getString(R.string.time_out);
             return ex;
         } else if (e instanceof UnknownHostException) {
-            ex = new ApiException(e, ERROR.UNKNOWNHOST_ERROR);
-            ex.message = "无法解析该域名";
+            ex = new ApiException(e, ERROR.UNKNOWN_HOST_ERROR);
+            ex.message = KennieHttp.getContext().getString(R.string.cannot_be_resolved);
             return ex;
         } else if (e instanceof NullPointerException) {
-            ex = new ApiException(e, ERROR.NULLPOINTER_EXCEPTION);
-            ex.message = "NullPointerException";
+            ex = new ApiException(e, ERROR.NULL_POINTER_EXCEPTION);
+            ex.message = KennieHttp.getContext().getString(R.string.null_error);
             return ex;
         } else {
             ex = new ApiException(e, ERROR.UNKNOWN);
-            ex.message = "未知错误";
+            ex.message = KennieHttp.getContext().getString(R.string.unknown_error);
             return ex;
         }
     }
@@ -142,10 +130,6 @@ public class ApiException extends Exception {
     public String getMessage() {
         return message;
     }
-
-    /*public String getErrMessage() {
-        return message;
-    }*/
 
     /**
      * 约定异常
@@ -162,11 +146,11 @@ public class ApiException extends Exception {
         /**
          * 网络错误
          */
-        public static final int NETWORD_ERROR = PARSE_ERROR + 1;
+        public static final int NETWORK_ERROR = PARSE_ERROR + 1;
         /**
          * 协议出错
          */
-        public static final int HTTP_ERROR = NETWORD_ERROR + 1;
+        public static final int HTTP_ERROR = NETWORK_ERROR + 1;
 
         /**
          * 证书出错
@@ -193,11 +177,11 @@ public class ApiException extends Exception {
         /**
          * 未知主机错误
          */
-        public static final int UNKNOWNHOST_ERROR = REQUEST_CANCEL + 1;
+        public static final int UNKNOWN_HOST_ERROR = REQUEST_CANCEL + 1;
 
         /**
          * 空指针错误
          */
-        public static final int NULLPOINTER_EXCEPTION = UNKNOWNHOST_ERROR + 1;
+        public static final int NULL_POINTER_EXCEPTION = UNKNOWN_HOST_ERROR + 1;
     }
 }
