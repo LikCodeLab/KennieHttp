@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+apply from: "${rootDir}/configs/tools/gradle/app.gradle"
+
+android {
+
+    defaultConfig {
+        applicationId "com.kennie.example.http"
+        // 配合 productFlavors 节点按不同维度打包
+        // flavorDimensions "MODE"
+        // 修改 AndroidManifest.xml 里的变量，占位值无法覆盖的坑可参阅 https://www.jianshu.com/p/1d5271c2c366
+        manifestPlaceholders = [
+                MY_CHANNEL: "unknown",
+        ]
+    }
+}
+
+dependencies {
+    implementation depK.core
+    implementation depX.appcompat
+    implementation depX.material
+    implementation kennieX.res
+    implementation project(':library_http')
+
+    // https://github.com/JakeWharton/RxBinding
+    implementation 'com.jakewharton.rxbinding4:rxbinding:4.0.0'
+    // https://github.com/tbruyelle/RxPermissions
+    implementation 'com.github.tbruyelle:rxpermissions:0.12'
+
+    //
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.2'
+    implementation 'com.google.code.gson:gson:2.8.9'
+}

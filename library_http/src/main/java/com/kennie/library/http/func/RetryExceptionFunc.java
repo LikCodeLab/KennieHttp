@@ -59,7 +59,7 @@ public class RetryExceptionFunc implements Function<Observable<? extends Throwab
                 }
                 if ((wrapper.throwable instanceof ConnectException
                         || wrapper.throwable instanceof SocketTimeoutException
-                        || errCode == ApiException.ERROR.NETWORD_ERROR
+                        || errCode == ApiException.ERROR.NETWORK_ERROR
                         || errCode == ApiException.ERROR.TIMEOUT_ERROR
                         || wrapper.throwable instanceof SocketTimeoutException
                         || wrapper.throwable instanceof TimeoutException)
