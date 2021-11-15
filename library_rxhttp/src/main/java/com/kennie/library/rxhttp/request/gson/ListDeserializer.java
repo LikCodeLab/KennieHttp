@@ -1,0 +1,42 @@
+package com.kennie.library.rxhttp.request.gson;
+
+
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 描述：
+ *
+ */
+public class ListDeserializer implements JsonDeserializer<List<?>> {
+
+    @Nullable
+    @Override
+    public List<?> deserialize(@NonNull JsonElement json, @NonNull Type typeOfT, @NonNull JsonDeserializationContext context) throws JsonParseException {
+        if (!json.isJsonArray()) {
+            return null;
+        }
+        List<Object> list = new ArrayList<>();
+        JsonArray array = json.getAsJsonArray();
+        Type itemType = ((ParameterizedType) typeOfT).getActualTypeArguments()[0];
+        for (int i = 0; i < array.size(); i++) {
+            JsonElement element = array.get(i);
+            Object item = context.deserialize(element, itemType);
+            list.add(item);
+        }
+        return list;
+    }
+
+}

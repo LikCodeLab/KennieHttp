@@ -15,4 +15,4 @@ include ':app_http'
 include ':library_http'
 
 
-
+include ':library_rxhttp'

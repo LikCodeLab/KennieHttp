@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">KennieHttp</string>
+    <string name="dddd">@string/http_data_explain_error</string>
 </resources>

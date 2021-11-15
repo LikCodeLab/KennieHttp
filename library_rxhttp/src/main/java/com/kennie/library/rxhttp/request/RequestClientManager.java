@@ -1,0 +1,209 @@
+package com.kennie.library.rxhttp.request;
+
+
+import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.google.gson.Gson;
+import com.kennie.library.rxhttp.core.RxHttp;
+import com.kennie.library.rxhttp.core.manager.BaseClientManager;
+import com.kennie.library.rxhttp.core.utils.BaseUrlUtils;
+import com.kennie.library.rxhttp.core.utils.SDCardUtils;
+import com.kennie.library.rxhttp.request.interceptor.BaseUrlRedirectInterceptor;
+import com.kennie.library.rxhttp.request.interceptor.CacheControlInterceptor;
+import com.kennie.library.rxhttp.request.interceptor.CacheControlNetworkInterceptor;
+import com.kennie.library.rxhttp.request.interceptor.PublicHeadersInterceptor;
+import com.kennie.library.rxhttp.request.interceptor.PublicQueryParameterInterceptor;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Cache;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+/**
+ * 描述：构建Retrofit实例，采用单例模式，全局共享同一个Retrofit
+ *
+ */
+class RequestClientManager extends BaseClientManager {
+
+    private static RequestClientManager INSTANCE = null;
+    private final Retrofit mRetrofit;
+    private Map<Class<?>, Retrofit> mRetrofitMap = null;
+
+    private RequestClientManager() {
+        mRetrofit = create();
+    }
+
+    /**
+     * 采用单例模式
+     *
+     * @return RequestClientManager
+     */
+    @NonNull
+    private static RequestClientManager getInstance() {
+        if (INSTANCE == null) {
+            synchronized (RequestClientManager.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new RequestClientManager();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    /**
+     * 创建Api接口实例
+     *
+     * @param clazz Api接口类
+     * @param <T>   Api接口
+     * @return Api接口实例
+     */
+    @NonNull
+    static <T> T getService(@NonNull Class<T> clazz) {
+        return getInstance().getRetrofit(clazz).create(clazz);
+    }
+
+    @NonNull
+    private Retrofit getRetrofit(@Nullable Class<?> clazz) {
+        if (clazz == null) {
+            return mRetrofit;
+        }
+        Retrofit retrofit = null;
+        if (mRetrofitMap != null && mRetrofitMap.size() > 0) {
+            Iterator<Map.Entry<Class<?>, Retrofit>> iterator = mRetrofitMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Class<?>, Retrofit> entry = iterator.next();
+                if (TextUtils.equals(entry.getKey().getName(), clazz.getName())) {
+                    retrofit = entry.getValue();
+                    if (retrofit == null) {
+                        iterator.remove();
+                    }
+                    break;
+                }
+            }
+        }
+        if (retrofit != null) {
+            return retrofit;
+        }
+        Map<Class<?>, String> baseUrlMap = RxHttp.getRequestSetting().getServiceBaseUrl();
+        if (baseUrlMap == null || baseUrlMap.size() == 0) {
+            return mRetrofit;
+        }
+        String baseUrl = null;
+        for (Map.Entry<Class<?>, String> entry : baseUrlMap.entrySet()) {
+            if (TextUtils.equals(entry.getKey().getName(), clazz.getName())) {
+                baseUrl = entry.getValue();
+                break;
+            }
+        }
+        if (baseUrl == null) {
+            return mRetrofit;
+        }
+        retrofit = create(baseUrl);
+        if (mRetrofitMap == null) {
+            mRetrofitMap = new HashMap<>(1);
+        }
+        mRetrofitMap.put(clazz, retrofit);
+        return retrofit;
+    }
+
+    /**
+     * 创建Retrofit实例
+     */
+    @Override
+    @NonNull
+    protected Retrofit create() {
+        return create(RxHttp.getRequestSetting().getBaseUrl());
+    }
+
+    /**
+     * 创建Retrofit实例
+     */
+    @NonNull
+    private Retrofit create(@NonNull String baseUrl) {
+        Retrofit.Builder builder = new Retrofit.Builder()
+                .client(createOkHttpClient())
+                .baseUrl(BaseUrlUtils.checkBaseUrl(baseUrl));
+        builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
+        Gson gson = RxHttp.getRequestSetting().getGson();
+        if (gson == null) {
+            gson = new Gson();
+        }
+        builder.addConverterFactory(GsonConverterFactory.create(gson));
+        return builder.build();
+    }
+
+    /**
+     * 创建OkHttpClient实例
+     *
+     * @return OkHttpClient
+     */
+    @NonNull
+    private OkHttpClient createOkHttpClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        // 设置调试模式打印日志
+        if (RxHttp.getRequestSetting().isDebug()) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            builder.addInterceptor(logging);
+        }
+        // 设置缓存
+        builder.cache(createCache());
+        // 设置3个超时时长
+        long timeout = RxHttp.getRequestSetting().getTimeout();
+        long connectTimeout = RxHttp.getRequestSetting().getConnectTimeout();
+        long readTimeout = RxHttp.getRequestSetting().getReadTimeout();
+        long writeTimeout = RxHttp.getRequestSetting().getWriteTimeout();
+        builder.connectTimeout(connectTimeout > 0 ? connectTimeout : timeout, TimeUnit.MILLISECONDS);
+        builder.readTimeout(readTimeout > 0 ? readTimeout : timeout, TimeUnit.MILLISECONDS);
+        builder.writeTimeout(writeTimeout > 0 ? writeTimeout : timeout, TimeUnit.MILLISECONDS);
+        // 设置应用层拦截器
+        BaseUrlRedirectInterceptor.addTo(builder);
+        PublicHeadersInterceptor.addTo(builder);
+        PublicQueryParameterInterceptor.addTo(builder);
+        CacheControlInterceptor.addTo(builder);
+        Interceptor[] interceptors = RxHttp.getRequestSetting().getInterceptors();
+        if (interceptors != null && interceptors.length > 0) {
+            for (Interceptor interceptor : interceptors) {
+                builder.addInterceptor(interceptor);
+            }
+        }
+        // 设置网络层拦截器
+        CacheControlNetworkInterceptor.addTo(builder);
+        Interceptor[] networkInterceptors = RxHttp.getRequestSetting().getNetworkInterceptors();
+        if (networkInterceptors != null && networkInterceptors.length > 0) {
+            for (Interceptor interceptor : networkInterceptors) {
+                builder.addNetworkInterceptor(interceptor);
+            }
+        }
+        RxHttp.getRequestSetting().setOkHttpClient(builder);
+        return builder.build();
+    }
+
+    /**
+     * 创建缓存
+     *
+     * @return Cache
+     */
+    @NonNull
+    private Cache createCache() {
+        File cacheFile = new File(SDCardUtils.getCacheDir(), RxHttp.getRequestSetting().getCacheDirName());
+        if (!cacheFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            cacheFile.mkdirs();
+        }
+        return new Cache(cacheFile, RxHttp.getRequestSetting().getCacheSize());
+    }
+}
