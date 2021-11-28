@@ -23,7 +23,7 @@ dependencies {
     implementation depX.appcompat
     implementation depX.material
     implementation kennieX.res
-    implementation project(':library_http')
+    implementation project(':OLD_library_http')
 
     // https://github.com/JakeWharton/RxBinding
     implementation 'com.jakewharton.rxbinding4:rxbinding:4.0.0'
