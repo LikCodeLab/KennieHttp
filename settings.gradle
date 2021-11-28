@@ -9,10 +9,16 @@ dependencyResolutionManagement {
 rootProject.name = "KennieHttp"
 
 //************************演示项目 目录************************
-include ':OLD_app_http'
+
 
 //************************公共库 目录************************
-include ':OLD_library_http'
+include ':library_http'
+
 
 
 include ':library_rxhttp'
+
+
+include ':OLD_app_http'
+include ':OLD_library_http'
+
